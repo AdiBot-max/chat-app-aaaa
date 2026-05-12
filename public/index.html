@@ -1,3 +1,5 @@
+<!-- public/index.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,11 +10,25 @@
 </head>
 <body>
 
-  <div id="chat"></div>
+  <!-- NAME SCREEN -->
+  <div id="nameScreen">
+    <h1>Choose Name</h1>
 
-  <div id="controls">
-    <input id="input" placeholder="Type message...">
-    <button id="send">Send</button>
+    <input id="nameInput" placeholder="Your name">
+
+    <button id="joinBtn">Join Chat</button>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div id="chatScreen">
+
+    <div id="chat"></div>
+
+    <div id="controls">
+      <input id="input" placeholder="Type message...">
+      <button id="send">Send</button>
+    </div>
+
   </div>
 
   <script src="script.js"></script>
