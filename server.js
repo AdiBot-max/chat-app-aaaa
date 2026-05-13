@@ -1,38 +1,96 @@
-// server.js
+const nameScreen = document.getElementById("nameScreen");
+const chatScreen = document.getElementById("chatScreen");
 
-import express from "express";
-import { WebSocketServer } from "ws";
-import http from "http";
+const nameInput = document.getElementById("nameInput");
+const joinBtn = document.getElementById("joinBtn");
 
-const app = express();
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
 
-app.use(express.static("public"));
+let username = "";
+let ws;
 
-const server = http.createServer(app);
+function connectWebSocket() {
 
-const wss = new WebSocketServer({ server });
+  const protocol =
+    location.protocol === "https:" ? "wss" : "ws";
 
-wss.on("connection", (socket) => {
+  ws = new WebSocket(`${protocol}://${location.host}`);
 
-  console.log("User connected");
+  ws.onopen = () => {
+    console.log("Connected to server");
+  };
 
-  socket.on("message", (data) => {
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
 
-    // Broadcast to everybody
-    wss.clients.forEach((client) => {
-      client.send(data.toString());
-    });
+    addMessage(`${data.username}: ${data.message}`);
+  };
 
-  });
+  ws.onclose = () => {
+    console.log("Disconnected");
 
-  socket.on("close", () => {
-    console.log("User disconnected");
-  });
+    // retry after 1 second
+    setTimeout(connectWebSocket, 1000);
+  };
 
+}
+
+connectWebSocket();
+
+function addMessage(text) {
+
+  const div = document.createElement("div");
+
+  div.className = "message";
+  div.textContent = text;
+
+  chat.appendChild(div);
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+joinBtn.onclick = () => {
+
+  const value = nameInput.value.trim();
+
+  if (value === "") return;
+
+  username = value;
+
+  nameScreen.style.display = "none";
+  chatScreen.style.display = "flex";
+};
+
+send.onclick = () => {
+
+  const message = input.value.trim();
+
+  if (message === "") return;
+
+  // Prevent sending if disconnected
+  if (ws.readyState !== WebSocket.OPEN) {
+    alert("Server waking up... try again in a second");
+    return;
+  }
+
+  ws.send(JSON.stringify({
+    username,
+    message
+  }));
+
+  input.value = "";
+};
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    send.click();
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-  console.log(`Running on ${PORT}`);
+nameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    joinBtn.click();
+  }
 });
