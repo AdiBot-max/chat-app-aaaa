@@ -1,5 +1,3 @@
-// public/script.js
-
 const nameScreen = document.getElementById("nameScreen");
 const chatScreen = document.getElementById("chatScreen");
 
@@ -11,12 +9,38 @@ const input = document.getElementById("input");
 const send = document.getElementById("send");
 
 let username = "";
+let ws;
 
-const protocol = location.protocol === "https:" ? "wss" : "ws";
+function connectWebSocket() {
 
-const ws = new WebSocket(`${protocol}://${location.host}`);
+  const protocol =
+    location.protocol === "https:" ? "wss" : "ws";
+
+  ws = new WebSocket(`${protocol}://${location.host}`);
+
+  ws.onopen = () => {
+    console.log("Connected to server");
+  };
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    addMessage(`${data.username}: ${data.message}`);
+  };
+
+  ws.onclose = () => {
+    console.log("Disconnected");
+
+    // retry after 1 second
+    setTimeout(connectWebSocket, 1000);
+  };
+
+}
+
+connectWebSocket();
 
 function addMessage(text) {
+
   const div = document.createElement("div");
 
   div.className = "message";
@@ -28,6 +52,7 @@ function addMessage(text) {
 }
 
 joinBtn.onclick = () => {
+
   const value = nameInput.value.trim();
 
   if (value === "") return;
@@ -39,9 +64,16 @@ joinBtn.onclick = () => {
 };
 
 send.onclick = () => {
+
   const message = input.value.trim();
 
   if (message === "") return;
+
+  // Prevent sending if disconnected
+  if (ws.readyState !== WebSocket.OPEN) {
+    alert("Server waking up... try again in a second");
+    return;
+  }
 
   ws.send(JSON.stringify({
     username,
@@ -49,12 +81,6 @@ send.onclick = () => {
   }));
 
   input.value = "";
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-
-  addMessage(`${data.username}: ${data.message}`);
 };
 
 input.addEventListener("keydown", (e) => {
